@@ -2,25 +2,57 @@ import json
 import os
 import numpy as np
 
+# ---------------------------
 # Load captions
-with open("train_caption.json", "r") as f:
+# ---------------------------
+caption_file = "train_caption.json"
+if not os.path.exists(caption_file):
+    raise FileNotFoundError(f"{caption_file} not found!")
+
+with open(caption_file, "r") as f:
     captions = json.load(f)
 
-# Convert list of dicts to a dict for easy access
-captions_dict = {item['video_id']: item['captions'] for item in captions}
+# Convert list of dicts to a dictionary for easy access
+captions_dict = {item['id']: item['caption'] for item in captions}
+print(f"[INFO] Loaded {len(captions_dict)} videos from captions")
 
-# Example: check if a video id exists and print first 3 captions
-vid_id = "xBePrplM4OA_6_18.avi"
-if vid_id in captions_dict:
-    print("[INFO] Captions:", captions_dict[vid_id][:3])
-else:
-    print(f"[WARNING] Video id {vid_id} not found in captions.")
+# ---------------------------
+# Load feature files
+# ---------------------------
+feature_dir = "feature"
+if not os.path.exists(feature_dir):
+    raise FileNotFoundError(f"Feature folder '{feature_dir}' not found!")
 
-# Check feature files
-feature_files = [f for f in os.listdir() if f.endswith(".npy")]
-print("[INFO] Found feature files:", feature_files)
+feature_files = [f for f in os.listdir(feature_dir) if f.endswith(".npy")]
+print(f"[INFO] Found {len(feature_files)} feature files in '{feature_dir}'")
 
+# ---------------------------
+# Display captions and check features
+# ---------------------------
+missing_captions = []
+
+for f in feature_files:
+    vid_id = f.replace(".npy", "")
+    if vid_id in captions_dict:
+        caps = captions_dict[vid_id]
+        print(f"\n[INFO] Video ID: {vid_id}")
+        print("[INFO] Number of captions:", len(caps))
+        print("[INFO] First 3 captions:", caps[:3])
+    else:
+        missing_captions.append(vid_id)
+        print(f"\n[WARNING] No captions found for video ID: {vid_id}")
+
+# ---------------------------
 # Check shape of a sample feature
+# ---------------------------
 if feature_files:
-    sample_feature = np.load(feature_files[0])
-    print("[INFO] Shape of sample feature:", sample_feature.shape)
+    sample_feature = np.load(os.path.join(feature_dir, feature_files[0]))
+    print(f"\n[INFO] Shape of sample feature '{feature_files[0]}': {sample_feature.shape}")
+
+# ---------------------------
+# Summary of missing captions
+# ---------------------------
+print(f"\n[INFO] Total feature files without captions: {len(missing_captions)}")
+if missing_captions:
+    print("[INFO] Example missing IDs:", missing_captions[:5])
+
